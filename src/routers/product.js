@@ -67,4 +67,32 @@ router.get('/products/:_id', async (req, res) => {
 	}
 });
 
+router.patch('/products/:_id', auth, async (req, res) => {
+	const updates = Object.keys(req.body);
+	const allowedUpdates = ['name', 'description', 'price', 'amount'];
+	const isValidOperation = updates.every(update =>
+		allowedUpdates.includes(update)
+	);
+
+	if (!isValidOperation) {
+		return res.status(400).send({ error: 'Invalid updates!' });
+	}
+
+	try {
+		const product = await Product.findOne({
+			_id: req.params._id,
+			seller: req.user._id
+		});
+
+		if (!product) return res.status(404).send();
+
+		updates.forEach(update => (product[update] = req.body[update]));
+		await product.save();
+
+		res.send(product);
+	} catch (e) {
+		res.status(400).send(e);
+	}
+});
+
 module.exports = router;
